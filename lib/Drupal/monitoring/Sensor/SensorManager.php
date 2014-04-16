@@ -126,9 +126,15 @@ class SensorManager {
       $settings = monitoring_sensor_settings_get($sensor_name);
       $settings['enabled'] = TRUE;
       monitoring_sensor_settings_save($sensor_name, $settings);
-      // @todo the following part is SensorDisappearedSensors specific. We need
-      //   to move it into the sensor somehow.
       $available_sensors = variable_get('monitoring_available_sensors', array());
+
+      if (!isset($available_sensors[$sensor_name])) {
+        // Use the watchdog message as the disappeared sensor does when new
+        // sensors are detected.
+        watchdog('monitoring', '@count new sensor/s added: @names',
+          array('@count' => 1, '@names' => $sensor_name));
+      }
+
       $available_sensors[$sensor_name]['enabled'] = TRUE;
       $available_sensors[$sensor_name]['name'] = $sensor_name;
       variable_set('monitoring_available_sensors', $available_sensors);
@@ -153,8 +159,6 @@ class SensorManager {
       $settings = monitoring_sensor_settings_get($sensor_name);
       $settings['enabled'] = FALSE;
       monitoring_sensor_settings_save($sensor_name, $settings);
-      // @todo - the following part is SensorDisappearedSensors specific. We need
-      //   to move it into the sensor somehow.
       $available_sensors = variable_get('monitoring_available_sensors', array());
       $available_sensors[$sensor_name]['enabled'] = FALSE;
       $available_sensors[$sensor_name]['name'] = $sensor_name;
