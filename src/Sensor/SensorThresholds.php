@@ -6,6 +6,8 @@
 
 namespace Drupal\monitoring\Sensor;
 
+use Drupal\Core\Form\FormStateInterface;
+
 /**
  * Abstract class providing configuration form for Sensor with thresholds.
  *
@@ -135,13 +137,13 @@ abstract class SensorThresholds extends SensorConfigurable implements SensorThre
    *
    * @param string $threshold_key
    *   Key of the threshold value form element.
-   * @param array $form_state
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
    *   Drupal form state object.
    * @param string $message
    *   The validation message.
    */
-  protected function setFormError($threshold_key, &$form_state, $message) {
-    \Drupal::formBuilder()->setErrorByName($this->info->getName() . '][thresholds][' . $threshold_key, $form_state, $message);
+  protected function setFormError($threshold_key, FormStateInterface $form_state, $message) {
+    $form_state->setErrorByName($this->info->getName() . '][thresholds][' . $threshold_key, $message);
   }
 
   /**
@@ -149,7 +151,7 @@ abstract class SensorThresholds extends SensorConfigurable implements SensorThre
    */
   public function settingsFormValidate($form, &$form_state) {
     $form_key = $this->info->getName();
-    $values = $form_state['values'][$form_key]['thresholds'];
+    $values = $form_state['values']['settings']['thresholds'];
     $type = $values['type'];
 
     switch ($type) {

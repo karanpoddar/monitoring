@@ -1,0 +1,99 @@
+#Schema for the configuration of the monitoring module.
+
+monitoring.sensor.*:
+  type: config_entity
+  label: 'Monitoring Sensor'
+  mapping:
+    id:
+      type: string
+      label: 'Machine-readable name'
+    label:
+      type: label
+      label: 'Sensor Label'
+    description:
+      type: text
+      label: 'Description'
+    category:
+      type: string
+      label: 'Category'
+    sensor_id:
+      type: string
+      label: 'Sensor ID'
+    result_class:
+      type: string
+      label: 'Result Class'
+    value_label:
+      type: string
+      label: 'Value Label'
+    value_type:
+      type: string
+      label: 'Value Type'
+    numeric:
+      type: boolean
+      label: 'Flag if the value is numeric'
+    status:
+      type: boolean
+      label: 'Enabled'
+    caching_time:
+      type: integer
+      label: 'Sensor Caching Time'
+    settings:
+      type: monitoring.settings.[sensor_id]
+      label: 'Settings'
+
+monitoring.settings.monitoring_git_dirty_tree:
+  type: mapping
+  label: 'Sensor settings'
+  mapping:
+    repo_path:
+      type: string
+      label: 'Repository path'
+    cmd:
+      type: string
+      label: 'Command'
+
+monitoring.settings.config_value:
+  type: mapping
+  label: 'Sensor settings'
+  mapping:
+    config:
+      type: string
+      label: 'Type'
+    key:
+      type: string
+      label: 'Key'
+    value:
+      type: string # this may need to be undefined or something.
+      label: 'Value'
+
+monitoring.settings.cron_last_run_time:
+  type: mapping
+  label: 'Sensor settings'
+  mapping:
+    thresholds:
+      type: mapping
+      label: 'Threshold'
+      mapping:
+        type:
+          type: string
+          label: 'Type'
+        warning:
+          type: integer
+          label: 'Warning'
+        critical:
+          type: integer
+          label: 'Critical'
+
+monitoring.settings.database_aggregator:
+  type: mapping
+  label: 'Sensor settings'
+  mapping:
+    table:
+      type: string
+      label: 'Table'
+    time_interval_field:
+      type: string
+      label: 'Time interval field'
+    time_interval_value:
+      type: integer
+      label: 'Time interval value'

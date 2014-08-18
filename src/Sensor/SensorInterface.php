@@ -7,13 +7,14 @@
 namespace Drupal\monitoring\Sensor;
 
 use Drupal\monitoring\Result\SensorResultInterface;
+use Drupal\Component\Plugin\PluginInspectionInterface;
 
 /**
- * Interface for a sensor defining basic operations.
+ * Interface for a sensor plugin defining basic operations.
  *
  * @todo more
  */
-interface SensorInterface {
+interface SensorInterface extends PluginInspectionInterface {
 
   /**
    * Service setter.
@@ -117,5 +118,29 @@ interface SensorInterface {
    *   Enabled flag.
    */
   function isEnabled();
+
+  /**
+   * Calculates dependencies for the configured plugin.
+   *
+   * Dependencies are saved in the plugin's configuration entity and are used to
+   * determine configuration synchronization order. For example, if the plugin
+   * integrates with specific user roles, this method should return an array of
+   * dependencies listing the specified roles.
+   *
+   * @return array
+   *   An array of dependencies grouped by type (module, theme, entity). For
+   *   example:
+   *   @code
+   *   array(
+   *     'entity' => array('user.role.anonymous', 'user.role.authenticated'),
+   *     'module' => array('node', 'user'),
+   *     'theme' => array('seven'),
+   *   );
+   *   @endcode
+   *
+   * @see \Drupal\Core\Config\Entity\ConfigDependencyManager
+   * @see \Drupal\Core\Config\Entity\ConfigEntityInterface::getConfigDependencyName()
+   */
+  public function calculateDependencies();
 
 }

@@ -10,6 +10,7 @@ use Drupal\monitoring\Result\SensorResultInterface;
 use Drupal\monitoring\Sensor\DisabledSensorException;
 use Drupal\monitoring\Sensor\NonExistingSensorException;
 use Drupal\monitoring\SensorRunner;
+use Drupal\monitoring\Entity\SensorInfo;
 
 /**
  * Tests for Monitoring API.
@@ -51,8 +52,8 @@ class MonitoringApiTest extends MonitoringUnitTestBase {
       'description' => 'To test correct sensor info hook implementation precedence.',
       'settings' => array(),
     );
-    \Drupal::state()->set('monitoring_test.sensor_info', $sensor_info_data);
     monitoring_sensor_manager()->resetCache();
+    $test_sensorInfo = SensorInfo::load('test_sensor_info');
     $sensor_info = monitoring_sensor_manager()->getSensorInfoByName('test_sensor_info');
 
     $this->assertEqual($sensor_info->getLabel(), $sensor_info_data['label']);
@@ -66,13 +67,14 @@ class MonitoringApiTest extends MonitoringUnitTestBase {
 
     // @todo - override remaining attributes.
     $sensor_info_data['numeric'] = FALSE;
+    $test_sensorInfo->numeric = FALSE;
     // Define custom value label and NO value type. In this setup the sensor
     // defined value label must be used.
     $sensor_info_data['value_label'] = 'Test label';
-    \Drupal::state()->set('monitoring_test.sensor_info', $sensor_info_data);
+    $test_sensorInfo->value_label = 'Test label';
+    $test_sensorInfo->save();
     monitoring_sensor_manager()->resetCache();
     $sensor_info = monitoring_sensor_manager()->getSensorInfoByName('test_sensor_info');
-
     // Test all custom defined.
     // Flag numeric must be false.
     $this->assertEqual($sensor_info->isNumeric(), FALSE);
@@ -82,8 +84,10 @@ class MonitoringApiTest extends MonitoringUnitTestBase {
     // Test value label provided by the monitoring_value_types().
     // Set the value type to one defined by the monitoring_value_types().
     $sensor_info_data['value_type'] = 'time_interval';
+    $test_sensorInfo->value_type = 'time_interval';
+    $test_sensorInfo->value_label = '';
+    $test_sensorInfo->save();
     unset($sensor_info_data['value_label']);
-    \Drupal::state()->set('monitoring_test.sensor_info',  $sensor_info_data);
     monitoring_sensor_manager()->resetCache();
     $sensor_info = monitoring_sensor_manager()->getSensorInfoByName('test_sensor_info');
     $value_types = monitoring_value_types();
@@ -323,20 +327,6 @@ class MonitoringApiTest extends MonitoringUnitTestBase {
     \Drupal::state()->set('monitoring_test.sensor_result_data', $test_sensor_result_data);
     $result = $this->runSensor('test_sensor');
     $this->assertNull($result->getValue());
-
-    // Test variable-based overrides.
-    \Drupal::config('monitoring.sensor_info')->set('test_sensor', array(
-      'label' => 'Overridden sensor',
-      'settings' => array(
-        'caching_time' => 1,
-        'new setting' => 'example value',
-      )
-    ))->save();
-    monitoring_sensor_manager()->resetCache();
-    $info = monitoring_sensor_manager()->getSensorInfoByName('test_sensor');
-    $this->assertEqual('Overridden sensor', $info->getLabel());
-    $this->assertEqual(1, $info->getSetting('caching_time'));
-    $this->assertEqual('example value', $info->getSetting('new setting'));
   }
 
   /**
@@ -353,7 +343,9 @@ class MonitoringApiTest extends MonitoringUnitTestBase {
       'sensor_status' => SensorResultInterface::STATUS_OK,
     );
     \Drupal::state()->set('monitoring_test.sensor_result_data', $test_sensor_result_data);
-    monitoring_sensor_manager()->saveSettings('test_sensor', array('result_logging' => TRUE));
+    $sensor = SensorInfo::load('test_sensor');
+    $sensor->settings['result_logging'] = TRUE;
+    $sensor->save();
     $this->runSensor('test_sensor');
 
     $logs = $this->loadSensorLog('test_sensor');
@@ -365,7 +357,8 @@ class MonitoringApiTest extends MonitoringUnitTestBase {
     $this->assertEqual($log->sensor_message->value, 'Value 1, test message');
 
     // Set log_calls sensor settings to false - that should prevent logging.
-    monitoring_sensor_manager()->saveSettings('test_sensor', array('result_logging' => FALSE));
+    $sensor->settings['result_logging'] = FALSE;
+    $sensor->save();
     debug(\Drupal::config('monitoring.settings')->get('test_sensor'));
     /** @var SensorRunner $runner */
     $runner = \Drupal::service('monitoring.sensor_runner');
@@ -388,7 +381,8 @@ class MonitoringApiTest extends MonitoringUnitTestBase {
     // Set the logging strategy to "Log all events".
     \Drupal::config('monitoring.settings')->set('sensor_call_logging', 'all')->save();
     // Running the sensor with 'result_logging' settings FALSE must record the call.
-    monitoring_sensor_manager()->saveSettings('test_sensor', array('result_logging' => FALSE));
+    $sensor->settings['result_logging'] = FALSE;
+    $sensor->save();
     $this->container->set('monitoring.sensor_runner', NULL);
     $this->runSensor('test_sensor');
     $logs = $this->loadSensorLog('test_sensor');
@@ -397,38 +391,13 @@ class MonitoringApiTest extends MonitoringUnitTestBase {
     // Set the logging strategy to "No logging".
     \Drupal::config('monitoring.settings')->set('sensor_call_logging', 'none')->save();
     // Despite log_calls TRUE we should not log any call.
-    monitoring_sensor_manager()->saveSettings('test_sensor', array('result_logging' => TRUE));
+    $sensor->settings['result_logging'] = TRUE;
+    $sensor->save();
     $this->container->set('monitoring.sensor_runner', NULL);
     $logs = $this->loadSensorLog('test_sensor');
     $this->runSensor('test_sensor');
     $this->assertEqual(count($logs), 3);
 
-  }
-
-  /**
-   * Test sensor info hook precedence.
-   *
-   * Test if custom sensor info hook implementation takes precedence from
-   * the local implementation.
-   *
-   * We need to run this test as last as it includes a file that will result
-   * in other tests failures.
-   */
-  function testSensorInfoPrecedence() {
-    // == Test monitoring sensor info. == //
-
-    $sensor_info = monitoring_sensor_info();
-    // The integration hook must be loaded.
-    $this->assertTrue(isset($sensor_info['test_sensor_integration']));
-
-    // Include file with custom hook implementation.
-    require_once drupal_get_path('module', 'monitoring_test') . '/monitoring_test.custom_hook.inc';
-    monitoring_sensor_manager()->resetCache();
-    // Reset the module implements cache.
-    \Drupal::moduleHandler()->resetImplementations();
-    $sensor_info = monitoring_sensor_info();
-    // The custom hook must take precedence.
-    $this->assertFalse(isset($sensor_info['test_sensor_integration']));
   }
 
   /**

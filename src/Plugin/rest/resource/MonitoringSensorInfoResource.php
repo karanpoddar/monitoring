@@ -14,6 +14,7 @@ use Drupal\rest\ResourceResponse;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Route;
+use Psr\Log\LoggerInterface;
 
 /**
  * Provides a resource for monitoring sensors.
@@ -32,8 +33,8 @@ class MonitoringSensorInfoResource extends ResourceBase {
    */
   protected $sensorManager;
 
-  public function __construct(array $configuration, $plugin_id, array $plugin_definition, array $serializer_formats, SensorManager $sensor_manager) {
-    parent::__construct($configuration, $plugin_id, $plugin_definition, $serializer_formats);
+  public function __construct(array $configuration, $plugin_id, array $plugin_definition, array $serializer_formats, SensorManager $sensor_manager, LoggerInterface $logger) {
+    parent::__construct($configuration, $plugin_id, $plugin_definition, $serializer_formats, $logger);
     $this->sensorManager = $sensor_manager;
   }
 
@@ -46,7 +47,8 @@ class MonitoringSensorInfoResource extends ResourceBase {
       $plugin_id,
       $plugin_definition,
       $container->getParameter('serializer.formats'),
-      $container->get('monitoring.sensor_manager')
+      $container->get('monitoring.sensor_manager'),
+      $container->get('logger.factory')->get('ajax')
     );
   }
 
@@ -97,14 +99,14 @@ class MonitoringSensorInfoResource extends ResourceBase {
       catch (NonExistingSensorException $e) {
         throw new NotFoundHttpException($e->getMessage(), $e);
       }
-      $response = $info->toArray();
+      $response = $info->getDefinition();
       $response['uri'] = \Drupal::request()->getUriForPath('/monitoring-sensor-info/' . $sensor_name);
       return new ResourceResponse($response);
     }
 
     $list = array();
     foreach ($this->sensorManager->getSensorInfo() as $sensor_name => $sensor_info) {
-      $list[$sensor_name] = $sensor_info->toArray();
+      $list[$sensor_name] = $sensor_info->getDefinition();
       $list[$sensor_name]['uri'] = \Drupal::request()->getUriForPath('/monitoring-sensor-info/' . $sensor_name);
     }
     return new ResourceResponse($list);

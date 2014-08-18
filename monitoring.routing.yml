@@ -1,15 +1,8 @@
 monitoring.sensors_overview_settings:
   path: '/admin/config/system/monitoring/sensors'
   defaults:
-    _form: '\Drupal\monitoring\Form\SensorsOverviewForm'
-  requirements:
-    _permission: 'administer monitoring'
-
-monitoring.sensor_settings:
-  path: '/admin/config/system/monitoring/sensors/{sensor_name}'
-  defaults:
-    _form: '\Drupal\monitoring\Form\SensorSettingsForm'
-    _title_callback: '\Drupal\monitoring\Form\SensorSettingsForm::formTitle'
+    _entity_list: 'monitoring_sensor'
+    _title: 'Sensor Overview'
   requirements:
     _permission: 'administer monitoring'
 
@@ -24,7 +17,7 @@ monitoring.sensor_list:
 monitoring.detail_form:
   path: '/admin/reports/monitoring/sensors/{sensor_name}'
   defaults:
-    _form: '\Drupal\monitoring\Form\SensorDetailForm'
+    _entity_form: 'monitoring_sensor.details'
     _title_callback: '\Drupal\monitoring\Form\SensorDetailForm::formTitle'
   requirements:
     _permission: 'monitoring reports'
@@ -42,3 +35,34 @@ monitoring.force_run_sensor:
     _controller: '\Drupal\monitoring\Controller\ForceRunController::forceRunSensor'
   requirements:
     _permission: 'monitoring force run'
+
+monitoring.sensor_delete:
+  path: '/admin/config/system/monitoring/sensors/{monitoring_sensor}/delete'
+  defaults:
+    _entity_form: 'monitoring_sensor.delete'
+    _title: 'Delete'
+  requirements:
+    _permission: 'administer monitoring'
+
+monitoring.sensor_edit:
+  path: '/admin/config/system/monitoring/sensors/{monitoring_sensor}'
+  defaults:
+    _entity_form: 'monitoring_sensor.edit'
+    _title_callback: '\Drupal\monitoring\SensorForm::formTitle'
+  requirements:
+    _permission: 'administer monitoring'
+
+monitoring.sensor_add:
+  path: '/admin/config/system/monitoring/sensors/add'
+  defaults:
+    _entity_form: 'monitoring_sensor.add'
+    _title: 'Add Sensor'
+  requirements:
+    _permission: 'administer monitoring'
+
+monitoring.config_autocomplete:
+  path: '/monitoring-config/autocomplete'
+  defaults:
+    _controller: '\Drupal\monitoring\Controller\ConfigAutocompleteController::autocomplete'
+  requirements:
+    _permission: 'administer monitoring'

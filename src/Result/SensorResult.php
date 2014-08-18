@@ -8,7 +8,7 @@ namespace Drupal\monitoring\Result;
 
 use Drupal\Component\Utility\String;
 use Drupal\monitoring\Sensor\SensorCompilationException;
-use Drupal\monitoring\Sensor\SensorInfo;
+use Drupal\monitoring\Entity\SensorInfo;
 use Drupal\monitoring\Sensor\Thresholds;
 
 /**
@@ -16,7 +16,7 @@ use Drupal\monitoring\Sensor\Thresholds;
  *
  * @todo more
  *
- * @see \Drupal\monitoring\Sensor\SensorInfo
+ * @see \Drupal\monitoring\Entity\SensorInfo
  * @see \Drupal\monitoring\SensorRunner
  */
 class SensorResult implements SensorResultInterface {
@@ -24,7 +24,7 @@ class SensorResult implements SensorResultInterface {
   /**
    * The sensor info instance.
    *
-   * @var \Drupal\monitoring\Sensor\SensorInfo
+   * @var \Drupal\monitoring\Entity\SensorInfo
    */
   protected $sensorInfo;
 
@@ -208,7 +208,7 @@ class SensorResult implements SensorResultInterface {
         '!formatted_value' => $this->getFormattedValue($this->getValue()),
         '@time' => $this->getTimestamp(),
         '!expected' => $msg_expected,
-        '!time_interval' => \Drupal::service('date')->formatInterval($this->getSensorInfo()->getTimeIntervalValue()),
+        '!time_interval' => \Drupal::service('date.formatter')->formatInterval($this->getSensorInfo()->getTimeIntervalValue()),
       );
 
       // Build an array of message parts.
