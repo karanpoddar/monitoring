@@ -68,6 +68,7 @@ class MonitoringUITest extends MonitoringTestBase {
     $account = $this->drupalCreateUser(array('administer monitoring', 'monitoring reports'));
     $this->drupalLogin($account);
 
+    // Creating SensorEntityAggregator type sensor.
     $this->drupalGet('admin/config/system/monitoring/sensors/add');
 
     $this->assertFieldByName('status', TRUE);
@@ -98,6 +99,38 @@ class MonitoringUITest extends MonitoringTestBase {
     $this->assertText('This action cannot be undone.');
     $this->drupalPostForm(NULL, array(), t('Delete'));
     $this->assertText('Sensor UI created Sensor has been deleted.');
+
+    // Creating SensorConfigValue type sensor.
+    $this->drupalGet('admin/config/system/monitoring/sensors/add');
+
+    $this->assertFieldByName('status', TRUE);
+
+    $this->drupalPostForm('admin/config/system/monitoring/sensors/add', array(
+      'label' => 'UI created Config Sensor',
+      'description' => 'Sensor created to test UI',
+      'id' => 'ui_test_config_sensor',
+      'value_label' => 'Test Value',
+      'caching_time' => 100,
+      'sensor_id' => 'config_value',
+    ), t('Select sensor'));
+
+    $this->assertText('Sensor Settings');
+    $this->drupalPostForm(NULL, array(
+      'settings[config]' => 'monitoring.settings.yml',
+      'settings[key]' => 'sensor_call_logging',
+      'settings[value]' => 'on_request',
+    ), t('Save'));
+    $this->assertText('Sensor settings saved.');
+
+    $this->drupalGet('admin/config/system/monitoring/sensors/ui_test_config_sensor');
+    $this->assertFieldByName('caching_time', 100);
+    $result = $this->runSensor('ui_test_config_sensor');
+    $this->assertEqual($result->getValue(),'on_request');
+
+    $this->drupalGet('admin/config/system/monitoring/sensors/ui_test_config_sensor/delete');
+    $this->assertText('This action cannot be undone.');
+    $this->drupalPostForm(NULL, array(), t('Delete'));
+    $this->assertText('Sensor UI created Config Sensor has been deleted.');
   }
 
   /**

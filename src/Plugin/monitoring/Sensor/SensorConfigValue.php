@@ -70,6 +70,13 @@ class SensorConfigValue extends SensorValueComparisonBase {
       '#title' => t('Key'),
       '#required' => TRUE,
     );
+    $form['value'] = array(
+      '#type' => 'textfield',
+      '#default_value' => $this->info->getSetting('value')? $this->info->getSetting('value') : '',
+      '#maxlength' => 255,
+      '#title' => t('Expected Value'),
+      '#required' => TRUE,
+    );
     return $form;
   }
 }
